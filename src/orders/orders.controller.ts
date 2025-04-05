@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Param, Inject, ParseUUIDPipe, Query, Patch } from '@nestjs/common';
 import { CreateOrderDto } from './dto/create-order.dto';
-import { ORDER_SERVICE } from 'src/config';
+import { NATS_SERVICE } from 'src/config';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { catchError } from 'rxjs';
 import { OrderPaginationDto } from './dto/order-pagination.dto';
@@ -10,25 +10,25 @@ import { StatusDto } from './dto/status.dto';
 @Controller('orders')
 export class OrdersController {
   constructor(
-        @Inject(ORDER_SERVICE) private readonly ordersClient: ClientProxy
+    @Inject(NATS_SERVICE) private readonly client: ClientProxy
   ) {}
 
   @Post()
   create(@Body() createOrderDto: CreateOrderDto) {
-    return this.ordersClient.send('createOrder', createOrderDto)
+    return this.client.send('createOrder', createOrderDto)
 
   }
 
   @Get()
   findAll(@Query() orderPaginationDto: OrderPaginationDto) {
     //return (orderPaginationDto)
-    return this.ordersClient.send('findAllOrders', orderPaginationDto);
+    return this.client.send('findAllOrders', orderPaginationDto);
 
   }
 
   @Get('id/:id')
   findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.ordersClient.send('findOneOrder', {id: id})
+    return this.client.send('findOneOrder', {id: id})
       .pipe(
         catchError((err) => { throw new RpcException(err) })
       );
@@ -36,7 +36,7 @@ export class OrdersController {
 
   @Get(':status')
   findAllByStatus(@Param() statusDto: StatusDto, @Query() paginationDto: PaginationDto) {
-    return this.ordersClient.send('findAllOrders', {...paginationDto, status: statusDto.status})
+    return this.client.send('findAllOrders', {...paginationDto, status: statusDto.status})
       .pipe(
         catchError((err) => { throw new RpcException(err) })
       );
@@ -44,7 +44,7 @@ export class OrdersController {
 
   @Patch(':id')
   changeStatus(@Param('id', ParseUUIDPipe) id: string, @Body() statusDto: StatusDto) {
-    return this.ordersClient.send('changeOrderStatus', {id, status: statusDto.status})
+    return this.client.send('changeOrderStatus', {id, status: statusDto.status})
       .pipe(
         catchError((err) => { throw new RpcException(err) })
       );
