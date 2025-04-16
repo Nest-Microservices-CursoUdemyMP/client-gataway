@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Param, Inject, ParseUUIDPipe, Query, Patch
 import { CreateOrderDto } from './dto/create-order.dto';
 import { NATS_SERVICE } from 'src/config';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
-import { catchError } from 'rxjs';
+import { catchError, firstValueFrom } from 'rxjs';
 import { OrderPaginationDto } from './dto/order-pagination.dto';
 import { PaginationDto } from 'src/common';
 import { StatusDto } from './dto/status.dto';
@@ -20,9 +20,12 @@ export class OrdersController {
   }
 
   @Get()
-  findAll(@Query() orderPaginationDto: OrderPaginationDto) {
-    //return (orderPaginationDto)
-    return this.client.send('findAllOrders', orderPaginationDto);
+  async findAll(@Query() orderPaginationDto: OrderPaginationDto) {
+    return this.client.send('findAllOrders', orderPaginationDto)
+    .pipe(
+      catchError((err) => { throw new RpcException(err) })
+    );
+
 
   }
 
